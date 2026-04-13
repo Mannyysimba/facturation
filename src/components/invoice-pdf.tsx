@@ -1,9 +1,9 @@
 'use client';
 
-import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { Invoice } from '@/lib/types';
 import { COMPANY_INFO } from '@/lib/constants';
-import { lineTotal, totalHT, vatBreakdown, totalVAT, totalTTC } from '@/lib/calculations';
+import { lineTotal, totalHT, vatBreakdown, totalTTC } from '@/lib/calculations';
 
 function fmtCurrency(amount: number): string {
   return amount.toFixed(2).replace('.', ',') + ' €';
@@ -14,17 +14,25 @@ function fmtDate(dateStr: string): string {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 }
 
-const accent = '#E8651A';
-const accentBg = '#FFF0E6';
-const borderColor = '#E5E5E5';
-const textColor = '#111111';
-const mutedColor = '#666666';
+// Palette (slate + indigo accent)
+const slate900 = '#0f172a';
+const slate800 = '#1e293b';
+const slate700 = '#334155';
+const slate600 = '#475569';
+const slate500 = '#64748b';
+const slate400 = '#94a3b8';
+const slate200 = '#e2e8f0';
+const slate100 = '#f1f5f9';
+const slate50 = '#f8fafc';
+const indigo700 = '#4338ca';
+const indigo50 = '#eef2ff';
+const indigo100 = '#e0e7ff';
 
 const styles = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
     fontSize: 9,
-    color: textColor,
+    color: slate800,
     paddingTop: 40,
     paddingBottom: 60,
     paddingHorizontal: 40,
@@ -33,31 +41,48 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 30,
+    marginBottom: 26,
   },
-  headerCol: {
-    width: '48%',
-  },
+  headerCol: { width: '48%' },
   companyName: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Helvetica-Bold',
-    color: accent,
+    color: slate900,
     marginBottom: 6,
+    letterSpacing: -0.2,
   },
   headerText: {
     fontSize: 8.5,
     lineHeight: 1.5,
-    color: mutedColor,
+    color: slate600,
+  },
+  clientLabel: {
+    fontSize: 7.5,
+    color: indigo700,
+    fontFamily: 'Helvetica-Bold',
+    marginBottom: 5,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  clientName: {
+    fontSize: 11,
+    fontFamily: 'Helvetica-Bold',
+    color: slate900,
+    marginBottom: 3,
   },
   // Title section
   titleSection: {
-    marginBottom: 20,
+    marginBottom: 18,
+    paddingBottom: 10,
+    borderBottomWidth: 1.5,
+    borderBottomColor: slate900,
   },
   invoiceTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: 'Helvetica-Bold',
-    color: textColor,
+    color: slate900,
     marginBottom: 4,
+    letterSpacing: -0.4,
   },
   titleRow: {
     flexDirection: 'row',
@@ -66,129 +91,132 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   projectRef: {
-    fontSize: 10,
-    color: mutedColor,
+    fontSize: 9.5,
+    color: slate700,
+    fontFamily: 'Helvetica-Bold',
   },
   dateText: {
     fontSize: 9,
-    color: mutedColor,
-  },
-  // Client info in header right
-  clientLabel: {
-    fontSize: 8,
-    color: accent,
-    fontFamily: 'Helvetica-Bold',
-    marginBottom: 4,
-    textTransform: 'uppercase',
-  },
-  clientName: {
-    fontSize: 11,
-    fontFamily: 'Helvetica-Bold',
-    marginBottom: 3,
+    color: slate600,
   },
   // Table
   table: {
-    marginTop: 10,
-    marginBottom: 20,
+    marginTop: 6,
+    marginBottom: 18,
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: accentBg,
+    backgroundColor: slate50,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
     borderRadius: 3,
-    paddingVertical: 7,
-    paddingHorizontal: 8,
     marginBottom: 2,
   },
   tableHeaderText: {
-    fontSize: 8,
+    fontSize: 7.5,
     fontFamily: 'Helvetica-Bold',
-    color: textColor,
+    color: slate700,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 8,
-    paddingHorizontal: 8,
+    paddingVertical: 9,
+    paddingHorizontal: 10,
     borderBottomWidth: 0.5,
-    borderBottomColor: borderColor,
+    borderBottomColor: slate200,
   },
   colLabel: { width: '40%' },
-  colQty: { width: '12%', textAlign: 'center' },
-  colUnit: { width: '18%', textAlign: 'right' },
-  colVat: { width: '12%', textAlign: 'center' },
-  colTotal: { width: '18%', textAlign: 'right' },
-  cellText: { fontSize: 8.5 },
-  cellDesc: { fontSize: 7.5, color: mutedColor, marginTop: 2 },
+  colQty: { width: '12%' },
+  colUnit: { width: '18%' },
+  colVat: { width: '12%' },
+  colTotal: { width: '18%' },
+  cellLabel: { fontSize: 9, color: slate900, fontFamily: 'Helvetica-Bold' },
+  cellText: { fontSize: 9, color: slate800 },
+  cellMuted: { fontSize: 9, color: slate600 },
+  cellDesc: { fontSize: 7.5, color: slate500, marginTop: 2 },
   // Totals + due date section
   bottomSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 10,
+    marginTop: 14,
     marginBottom: 20,
   },
   dueDateBox: {
-    backgroundColor: accentBg,
+    backgroundColor: indigo50,
     borderWidth: 1,
-    borderColor: '#FFCBA4',
-    borderRadius: 4,
-    padding: 10,
+    borderColor: indigo100,
+    borderRadius: 5,
+    padding: 12,
     width: '45%',
+    alignSelf: 'flex-start',
   },
   dueDateLabel: {
-    fontSize: 8,
+    fontSize: 7.5,
     fontFamily: 'Helvetica-Bold',
-    color: accent,
+    color: indigo700,
     marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
   dueDateValue: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: 'Helvetica-Bold',
+    color: slate900,
   },
   totalsBox: {
-    width: '40%',
+    width: '42%',
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: 3,
   },
-  totalLabel: {
-    fontSize: 9,
-    color: mutedColor,
-  },
-  totalValue: {
-    fontSize: 9,
-  },
+  totalLabel: { fontSize: 9, color: slate600 },
+  totalValue: { fontSize: 9, color: slate900, fontFamily: 'Helvetica-Bold' },
   totalTTCRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 6,
-    borderTopWidth: 1,
-    borderTopColor: borderColor,
-    marginTop: 4,
+    alignItems: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    backgroundColor: slate900,
+    borderRadius: 4,
+    marginTop: 8,
   },
   totalTTCLabel: {
-    fontSize: 12,
+    fontSize: 9,
     fontFamily: 'Helvetica-Bold',
+    color: '#ffffff',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
   totalTTCValue: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Helvetica-Bold',
+    color: '#ffffff',
   },
   // Terms
   termsSection: {
-    marginTop: 10,
-    marginBottom: 20,
+    marginTop: 4,
+    marginBottom: 16,
+    backgroundColor: slate50,
+    padding: 10,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: slate200,
   },
   termsTitle: {
-    fontSize: 8,
+    fontSize: 7.5,
     fontFamily: 'Helvetica-Bold',
-    color: accent,
-    marginBottom: 6,
+    color: slate700,
+    marginBottom: 5,
     textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
   termsText: {
     fontSize: 7.5,
-    color: mutedColor,
+    color: slate600,
     lineHeight: 1.6,
   },
   // Footer
@@ -200,23 +228,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     borderTopWidth: 0.5,
-    borderTopColor: borderColor,
+    borderTopColor: slate200,
     paddingTop: 10,
   },
-  footerCol: {
-    width: '48%',
+  footerCol: { width: '48%' },
+  footerName: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    color: slate800,
+    marginBottom: 3,
   },
   footerLabel: {
     fontSize: 7,
     fontFamily: 'Helvetica-Bold',
-    color: accent,
+    color: indigo700,
     marginBottom: 3,
     textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
   footerText: {
     fontSize: 7.5,
-    color: mutedColor,
+    color: slate600,
     lineHeight: 1.5,
+  },
+  footerMono: {
+    fontSize: 7.5,
+    color: slate800,
+    fontFamily: 'Courier',
   },
 });
 
@@ -239,7 +277,6 @@ function clientAddress(invoice: Invoice): string {
 export default function InvoicePDF({ invoice }: { invoice: Invoice }) {
   const ht = totalHT(invoice.lines);
   const vatItems = vatBreakdown(invoice.lines);
-  const vat = totalVAT(invoice.lines);
   const ttc = totalTTC(invoice.lines);
 
   return (
@@ -253,7 +290,6 @@ export default function InvoicePDF({ invoice }: { invoice: Invoice }) {
               {COMPANY_INFO.address}{'\n'}
               {COMPANY_INFO.postalCode} {COMPANY_INFO.city}, {COMPANY_INFO.country}{'\n'}
               SIRET : {COMPANY_INFO.siret}{'\n'}
-              N° TVA Intracom. : .{'\n'}
               {COMPANY_INFO.email}{'\n'}
               {COMPANY_INFO.phone}
             </Text>
@@ -281,21 +317,21 @@ export default function InvoicePDF({ invoice }: { invoice: Invoice }) {
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <View style={styles.colLabel}><Text style={styles.tableHeaderText}>Libellé</Text></View>
-            <View style={styles.colQty}><Text style={[styles.tableHeaderText, { textAlign: 'center' }]}>Quantité</Text></View>
-            <View style={styles.colUnit}><Text style={[styles.tableHeaderText, { textAlign: 'right' }]}>Prix unitaire HT</Text></View>
+            <View style={styles.colQty}><Text style={[styles.tableHeaderText, { textAlign: 'center' }]}>Qté</Text></View>
+            <View style={styles.colUnit}><Text style={[styles.tableHeaderText, { textAlign: 'right' }]}>Prix unit. HT</Text></View>
             <View style={styles.colVat}><Text style={[styles.tableHeaderText, { textAlign: 'center' }]}>TVA</Text></View>
             <View style={styles.colTotal}><Text style={[styles.tableHeaderText, { textAlign: 'right' }]}>Total HT</Text></View>
           </View>
           {invoice.lines.map((line) => (
             <View key={line.id} style={styles.tableRow}>
               <View style={styles.colLabel}>
-                <Text style={styles.cellText}>{line.label}</Text>
+                <Text style={styles.cellLabel}>{line.label}</Text>
                 {line.description ? <Text style={styles.cellDesc}>{line.description}</Text> : null}
               </View>
               <View style={styles.colQty}><Text style={[styles.cellText, { textAlign: 'center' }]}>{line.quantity}</Text></View>
               <View style={styles.colUnit}><Text style={[styles.cellText, { textAlign: 'right' }]}>{fmtCurrency(line.unitPrice)}</Text></View>
-              <View style={styles.colVat}><Text style={[styles.cellText, { textAlign: 'center' }]}>{line.vatRate}%</Text></View>
-              <View style={styles.colTotal}><Text style={[styles.cellText, { textAlign: 'right' }]}>{fmtCurrency(lineTotal(line))}</Text></View>
+              <View style={styles.colVat}><Text style={[styles.cellMuted, { textAlign: 'center' }]}>{line.vatRate}%</Text></View>
+              <View style={styles.colTotal}><Text style={[styles.cellLabel, { textAlign: 'right' }]}>{fmtCurrency(lineTotal(line))}</Text></View>
             </View>
           ))}
         </View>
@@ -303,7 +339,7 @@ export default function InvoicePDF({ invoice }: { invoice: Invoice }) {
         {/* Due date + Totals */}
         <View style={styles.bottomSection}>
           <View style={styles.dueDateBox}>
-            <Text style={styles.dueDateLabel}>Échéance de paiement</Text>
+            <Text style={styles.dueDateLabel}>Échéance</Text>
             <Text style={styles.dueDateValue}>{fmtDate(invoice.dueDate)}</Text>
           </View>
           <View style={styles.totalsBox}>
@@ -339,7 +375,7 @@ export default function InvoicePDF({ invoice }: { invoice: Invoice }) {
         {/* Footer */}
         <View style={styles.footer} fixed>
           <View style={styles.footerCol}>
-            <Text style={styles.footerLabel}>{COMPANY_INFO.name}</Text>
+            <Text style={styles.footerName}>{COMPANY_INFO.name}</Text>
             <Text style={styles.footerText}>
               SIRET : {COMPANY_INFO.siret}{'\n'}
               {COMPANY_INFO.vatMention}
@@ -347,11 +383,9 @@ export default function InvoicePDF({ invoice }: { invoice: Invoice }) {
           </View>
           <View style={[styles.footerCol, { alignItems: 'flex-end' }]}>
             <Text style={[styles.footerLabel, { textAlign: 'right' }]}>Mode de paiement</Text>
-            <Text style={[styles.footerText, { textAlign: 'right' }]}>
-              Virement bancaire{'\n'}
-              IBAN : {COMPANY_INFO.iban}{'\n'}
-              BIC : {COMPANY_INFO.bic}
-            </Text>
+            <Text style={[styles.footerText, { textAlign: 'right' }]}>Virement bancaire</Text>
+            <Text style={[styles.footerMono, { textAlign: 'right' }]}>IBAN : {COMPANY_INFO.iban}</Text>
+            <Text style={[styles.footerMono, { textAlign: 'right' }]}>BIC : {COMPANY_INFO.bic}</Text>
           </View>
         </View>
       </Page>
