@@ -1,0 +1,28 @@
+interface LogoProps {
+  size?: number;
+  className?: string;
+}
+
+export function Logo({ size = 36, className = '' }: LogoProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 100 100"
+      width={size}
+      height={size}
+      className={className}
+      aria-label="Facturation"
+    >
+      <rect width="100" height="100" rx="22" fill="#ffffff" />
+      <path
+        d="M30 20 L62 20 L78 36 L78 80 Q78 84 74 84 L30 84 Q26 84 26 80 L26 24 Q26 20 30 20 Z"
+        fill="#0a0a0a"
+      />
+      <path d="M62 20 L62 36 L78 36 Z" fill="#ffffff" />
+      <rect x="34" y="46" width="36" height="3" rx="1.5" fill="#ffffff" />
+      <rect x="34" y="56" width="30" height="3" rx="1.5" fill="#ffffff" />
+      <rect x="34" y="66" width="34" height="3" rx="1.5" fill="#ffffff" />
+      <rect x="34" y="76" width="20" height="3" rx="1.5" fill="#ffffff" />
+    </svg>
+  );
+}

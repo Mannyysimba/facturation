@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Invoice, InvoiceStatus } from '@/lib/types';
 import { getInvoices, deleteInvoice, updateInvoiceStatus, saveInvoice, generateInvoiceNumber } from '@/lib/store';
 import { UserButton } from '@clerk/nextjs';
+import { Logo } from '@/components/logo';
 import { totalTTC, formatCurrency, formatDate } from '@/lib/calculations';
 import { STATUS_LABELS } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
@@ -138,9 +139,7 @@ export default function Dashboard() {
       <div className="border-b border-zinc-200">
         <div className="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-zinc-900 text-white font-bold text-sm tracking-tight">
-              MB
-            </div>
+            <Logo size={36} className="rounded-lg border border-zinc-200" />
             <div>
               <h1 className="text-lg font-semibold text-zinc-900 tracking-tight">Factures</h1>
               <p className="text-sm text-zinc-500 mt-0.5">{invoices.length} facture{invoices.length !== 1 ? 's' : ''}</p>
