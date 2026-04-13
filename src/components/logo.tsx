@@ -14,15 +14,19 @@ export function Logo({ size = 36, className = '' }: LogoProps) {
       aria-label="Facturation"
     >
       <rect width="100" height="100" rx="22" fill="#ffffff" />
+      <rect x="28" y="24" width="54" height="62" rx="4" fill="#e4e4e7" />
       <path
-        d="M30 20 L62 20 L78 36 L78 80 Q78 84 74 84 L30 84 Q26 84 26 80 L26 24 Q26 20 30 20 Z"
-        fill="#0a0a0a"
+        d="M26 18 L62 18 L80 36 L80 78 Q80 82 76 82 L26 82 Q22 82 22 78 L22 22 Q22 18 26 18 Z"
+        fill="#09090b"
       />
-      <path d="M62 20 L62 36 L78 36 Z" fill="#ffffff" />
-      <rect x="34" y="46" width="36" height="3" rx="1.5" fill="#ffffff" />
-      <rect x="34" y="56" width="30" height="3" rx="1.5" fill="#ffffff" />
-      <rect x="34" y="66" width="34" height="3" rx="1.5" fill="#ffffff" />
-      <rect x="34" y="76" width="20" height="3" rx="1.5" fill="#ffffff" />
+      <path d="M62 18 L62 36 L80 36 Z" fill="#fafafa" />
+      <line x1="62" y1="18" x2="80" y2="36" stroke="#09090b" strokeWidth="0.6" strokeLinecap="round" />
+      <rect x="30" y="48" width="30" height="1.8" rx="0.9" fill="#ffffff" />
+      <rect x="30" y="55" width="22" height="1.3" rx="0.65" fill="#ffffff" opacity="0.55" />
+      <rect x="30" y="61" width="26" height="1.3" rx="0.65" fill="#ffffff" opacity="0.55" />
+      <line x1="30" y1="69" x2="72" y2="69" stroke="#ffffff" strokeWidth="0.4" opacity="0.25" />
+      <rect x="30" y="72" width="12" height="2.2" rx="1.1" fill="#ffffff" />
+      <rect x="58" y="72" width="14" height="2.2" rx="1.1" fill="#ffffff" />
     </svg>
   );
 }

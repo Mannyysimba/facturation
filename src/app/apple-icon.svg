@@ -1,9 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
   <rect width="180" height="180" rx="40" fill="#ffffff"/>
-  <path d="M54 36 L112 36 L140 64 L140 144 Q140 152 132 152 L54 152 Q46 152 46 144 L46 44 Q46 36 54 36 Z" fill="#0a0a0a"/>
-  <path d="M112 36 L112 64 L140 64 Z" fill="#ffffff"/>
-  <rect x="62" y="82" width="64" height="5" rx="2.5" fill="#ffffff"/>
-  <rect x="62" y="100" width="54" height="5" rx="2.5" fill="#ffffff"/>
-  <rect x="62" y="118" width="60" height="5" rx="2.5" fill="#ffffff"/>
-  <rect x="62" y="136" width="36" height="5" rx="2.5" fill="#ffffff"/>
+
+  <!-- Back document -->
+  <rect x="50" y="43" width="98" height="112" rx="8" fill="#e4e4e7"/>
+
+  <!-- Main document body -->
+  <path d="M47 32 L112 32 L144 64 L144 140 Q144 148 136 148 L47 148 Q39 148 39 140 L39 40 Q39 32 47 32 Z" fill="#09090b"/>
+
+  <!-- Fold -->
+  <path d="M112 32 L112 64 L144 64 Z" fill="#fafafa"/>
+  <line x1="112" y1="32" x2="144" y2="64" stroke="#09090b" stroke-width="1.1" stroke-linecap="round"/>
+
+  <!-- Content rows -->
+  <rect x="54" y="86" width="54" height="3.2" rx="1.6" fill="#ffffff"/>
+  <rect x="54" y="98" width="40" height="2.3" rx="1.15" fill="#ffffff" opacity="0.55"/>
+  <rect x="54" y="109" width="47" height="2.3" rx="1.15" fill="#ffffff" opacity="0.55"/>
+
+  <!-- Divider -->
+  <line x1="54" y1="124" x2="130" y2="124" stroke="#ffffff" stroke-width="0.7" opacity="0.25"/>
+
+  <!-- Total row -->
+  <rect x="54" y="130" width="22" height="4" rx="2" fill="#ffffff"/>
+  <rect x="104" y="130" width="26" height="4" rx="2" fill="#ffffff"/>
 </svg>
