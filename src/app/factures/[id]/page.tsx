@@ -85,12 +85,12 @@ export default function ViewInvoicePage({ params }: { params: Promise<{ id: stri
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="bg-white border border-zinc-200 rounded-lg p-10">
+        <div className="bg-white border border-zinc-200 rounded-lg p-10 shadow-sm">
           {/* Header */}
           <div className="flex justify-between mb-10">
             <div>
-              <h2 className="text-base font-semibold text-zinc-900 tracking-tight">{COMPANY_INFO.name}</h2>
-              <p className="text-sm text-zinc-500 mt-1 whitespace-pre-line leading-relaxed">
+              <h2 className="text-base font-semibold text-slate-900 tracking-tight">{COMPANY_INFO.name}</h2>
+              <p className="text-sm text-slate-600 mt-1 whitespace-pre-line leading-relaxed">
                 {COMPANY_INFO.address}{'\n'}
                 {COMPANY_INFO.postalCode} {COMPANY_INFO.city}, {COMPANY_INFO.country}{'\n'}
                 SIRET : {COMPANY_INFO.siret}{'\n'}
@@ -99,12 +99,12 @@ export default function ViewInvoicePage({ params }: { params: Promise<{ id: stri
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Factur&eacute; &agrave;</p>
-              <p className="font-semibold text-zinc-900 mt-1">{clientDisplayName(invoice)}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-indigo-700">Factur&eacute; &agrave;</p>
+              <p className="font-semibold text-slate-900 mt-1.5 text-base">{clientDisplayName(invoice)}</p>
               {invoice.client.type === 'entreprise' && invoice.client.siret && (
-                <p className="text-sm text-zinc-500">SIRET : {invoice.client.siret}</p>
+                <p className="text-sm text-slate-600 mt-0.5">SIRET : {invoice.client.siret}</p>
               )}
-              <p className="text-sm text-zinc-500 leading-relaxed">
+              <p className="text-sm text-slate-600 leading-relaxed mt-1">
                 {invoice.client.address}<br />
                 {invoice.client.postalCode} {invoice.client.city}<br />
                 {invoice.client.country}
@@ -113,17 +113,17 @@ export default function ViewInvoicePage({ params }: { params: Promise<{ id: stri
           </div>
 
           {/* Title */}
-          <div className="mb-8 pb-6 border-b border-zinc-200">
-            <h1 className="text-xl font-semibold text-zinc-900 tracking-tight">Facture {invoice.number}</h1>
-            <div className="flex justify-between mt-1.5">
-              <span className="text-sm text-zinc-500">{invoice.title}</span>
-              <span className="text-sm text-zinc-500">&Eacute;mise le {formatDate(invoice.issueDate)}</span>
+          <div className="mb-8 pb-6 border-b-2 border-slate-900">
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Facture {invoice.number}</h1>
+            <div className="flex justify-between mt-2">
+              <span className="text-sm font-medium text-slate-700">{invoice.title}</span>
+              <span className="text-sm text-slate-600">&Eacute;mise le <span className="font-medium text-slate-800">{formatDate(invoice.issueDate)}</span></span>
             </div>
           </div>
 
           {/* Table */}
           <div className="mb-8">
-            <div className="grid grid-cols-12 gap-2 py-2.5 text-xs font-medium text-zinc-500 uppercase tracking-wide border-b border-zinc-200">
+            <div className="grid grid-cols-12 gap-2 py-3 px-3 bg-slate-50 rounded-t-md text-[11px] font-semibold text-slate-700 uppercase tracking-[0.06em]">
               <div className="col-span-5">Libell&eacute;</div>
               <div className="col-span-1 text-center">Qt&eacute;</div>
               <div className="col-span-2 text-right">Prix unit. HT</div>
@@ -131,72 +131,72 @@ export default function ViewInvoicePage({ params }: { params: Promise<{ id: stri
               <div className="col-span-2 text-right">Total HT</div>
             </div>
             {invoice.lines.map((line) => (
-              <div key={line.id} className="grid grid-cols-12 gap-2 py-3 border-b border-zinc-100 text-sm">
+              <div key={line.id} className="grid grid-cols-12 gap-2 py-3.5 px-3 border-b border-slate-100 text-sm">
                 <div className="col-span-5">
-                  <div className="text-zinc-900">{line.label}</div>
-                  {line.description && <div className="text-xs text-zinc-400 mt-0.5">{line.description}</div>}
+                  <div className="text-slate-900 font-medium">{line.label}</div>
+                  {line.description && <div className="text-xs text-slate-500 mt-0.5">{line.description}</div>}
                 </div>
-                <div className="col-span-1 text-center text-zinc-700">{line.quantity}</div>
-                <div className="col-span-2 text-right text-zinc-700">{formatCurrency(line.unitPrice)}</div>
-                <div className="col-span-2 text-center text-zinc-700">{line.vatRate}%</div>
-                <div className="col-span-2 text-right font-medium text-zinc-900">{formatCurrency(lineTotal(line))}</div>
+                <div className="col-span-1 text-center text-slate-800">{line.quantity}</div>
+                <div className="col-span-2 text-right text-slate-800">{formatCurrency(line.unitPrice)}</div>
+                <div className="col-span-2 text-center text-slate-600">{line.vatRate}%</div>
+                <div className="col-span-2 text-right font-semibold text-slate-900">{formatCurrency(lineTotal(line))}</div>
               </div>
             ))}
           </div>
 
           {/* Due date + Totals */}
-          <div className="flex justify-between mb-10">
-            <div className="border border-zinc-200 rounded-md px-4 py-3 h-fit">
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">&Eacute;ch&eacute;ance</p>
-              <p className="font-semibold text-zinc-900 mt-1">{formatDate(invoice.dueDate)}</p>
+          <div className="flex justify-between mb-10 gap-6">
+            <div className="rounded-lg px-5 py-4 h-fit bg-indigo-50 border border-indigo-100">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-indigo-700">&Eacute;ch&eacute;ance</p>
+              <p className="font-bold text-slate-900 mt-1 text-base">{formatDate(invoice.dueDate)}</p>
             </div>
-            <div className="w-64 space-y-2">
+            <div className="w-72 space-y-2.5">
               <div className="flex justify-between text-sm">
-                <span className="text-zinc-500">Total HT</span>
-                <span className="text-zinc-900">{formatCurrency(ht)}</span>
+                <span className="text-slate-600">Total HT</span>
+                <span className="text-slate-900 font-medium">{formatCurrency(ht)}</span>
               </div>
               {vatItems.map((v) => (
                 <div key={v.rate} className="flex justify-between text-sm">
-                  <span className="text-zinc-500">TVA {v.rate}%</span>
-                  <span className="text-zinc-900">{formatCurrency(v.amount)}</span>
+                  <span className="text-slate-600">TVA {v.rate}%</span>
+                  <span className="text-slate-900 font-medium">{formatCurrency(v.amount)}</span>
                 </div>
               ))}
               {vatItems.length === 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-zinc-500">TVA</span>
-                  <span className="text-zinc-900">{formatCurrency(0)}</span>
+                  <span className="text-slate-600">TVA</span>
+                  <span className="text-slate-900 font-medium">{formatCurrency(0)}</span>
                 </div>
               )}
-              <div className="border-t border-zinc-200 pt-2 flex justify-between text-base font-semibold text-zinc-900">
-                <span>Total TTC</span>
-                <span>{formatCurrency(ttc)}</span>
+              <div className="mt-3 flex justify-between items-center bg-slate-900 text-white px-4 py-3 rounded-md">
+                <span className="text-sm font-semibold uppercase tracking-wide">Total TTC</span>
+                <span className="text-lg font-bold">{formatCurrency(ttc)}</span>
               </div>
             </div>
           </div>
 
           {/* Terms */}
-          <div className="mb-8">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 mb-2">Termes et conditions</p>
-            <p className="text-xs text-zinc-500 whitespace-pre-line leading-relaxed">{invoice.terms}</p>
+          <div className="mb-8 p-4 bg-slate-50 rounded-md border border-slate-100">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-700 mb-2">Termes et conditions</p>
+            <p className="text-xs text-slate-600 whitespace-pre-line leading-relaxed">{invoice.terms}</p>
           </div>
 
-          <div className="border-t border-zinc-200" />
+          <div className="border-t border-slate-200" />
 
           {/* Footer */}
           <div className="flex justify-between mt-6">
             <div>
-              <p className="text-xs font-medium text-zinc-700">{COMPANY_INFO.name}</p>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <p className="text-xs font-semibold text-slate-800">{COMPANY_INFO.name}</p>
+              <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
                 SIRET : {COMPANY_INFO.siret}<br />
                 {COMPANY_INFO.vatMention}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs font-medium text-zinc-700">Mode de paiement</p>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-indigo-700">Mode de paiement</p>
+              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
                 Virement bancaire<br />
-                IBAN : {COMPANY_INFO.iban}<br />
-                BIC : {COMPANY_INFO.bic}
+                IBAN : <span className="font-mono text-slate-800">{COMPANY_INFO.iban}</span><br />
+                BIC : <span className="font-mono text-slate-800">{COMPANY_INFO.bic}</span>
               </p>
             </div>
           </div>

@@ -37,7 +37,7 @@ export default function PDFDownloadButton({ invoice }: { invoice: Invoice }) {
 
   return (
     <Button
-      className="bg-orange-500 hover:bg-orange-600"
+      className="h-8 text-sm bg-emerald-600 hover:bg-emerald-700 text-white"
       onClick={handleDownload}
       disabled={generating}
     >
