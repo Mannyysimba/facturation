@@ -1,0 +1,23 @@
+{
+  "name": "Facturation - Manil Belkacem EI",
+  "short_name": "Facturation",
+  "description": "Application de facturation",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#09090b",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "180x180",
+      "purpose": "any"
+    }
+  ]
+}

@@ -26,6 +26,23 @@ export interface Client {
   country: string;
 }
 
+export interface SavedClient extends Client {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Service {
+  id: string;
+  label: string;
+  description: string;
+  defaultQuantity: number;
+  defaultUnitPrice: number;
+  defaultVatRate: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Invoice {
   id: string;
   number: string;

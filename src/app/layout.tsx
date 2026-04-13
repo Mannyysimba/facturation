@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 const inter = Inter({
@@ -10,6 +11,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Facturation - Manil Belkacem EI",
   description: "Application de facturation",
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({
@@ -18,8 +20,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-gray-50">{children}</body>
-    </html>
+    <ClerkProvider afterSignOutUrl="/sign-in" signInUrl="/sign-in" signUpUrl="/sign-up">
+      <html lang="fr" className={`${inter.variable} h-full antialiased`}>
+        <body className="min-h-full flex flex-col bg-gray-50">{children}</body>
+      </html>
+    </ClerkProvider>
   );
 }
