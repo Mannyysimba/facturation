@@ -63,6 +63,8 @@ export default function InvoiceForm({ invoiceId }: InvoiceFormProps) {
   const [savedClients, setSavedClients] = useState<SavedClient[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>('new');
   const [services, setServices] = useState<Service[]>([]);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -184,19 +186,35 @@ export default function InvoiceForm({ invoiceId }: InvoiceFormProps) {
   }
 
   async function handleSaveDraft() {
-    const invoice = await buildInvoice(existingStatus === 'brouillon' ? 'brouillon' : existingStatus);
-    await upsertClientFromInvoice(invoice.client);
-    await persistLineServices(invoice.lines);
-    await saveInvoice(invoice);
-    router.push('/');
+    setSaveError(null);
+    setSaving(true);
+    try {
+      const invoice = await buildInvoice(existingStatus === 'brouillon' ? 'brouillon' : existingStatus);
+      await upsertClientFromInvoice(invoice.client);
+      await persistLineServices(invoice.lines);
+      await saveInvoice(invoice);
+      router.push('/');
+    } catch (e) {
+      console.error('Save draft failed:', e);
+      setSaveError(e instanceof Error ? e.message : 'Erreur inconnue lors de l\'enregistrement');
+      setSaving(false);
+    }
   }
 
   async function handleSaveAndPreview() {
-    const invoice = await buildInvoice(existingStatus === 'brouillon' ? 'en_attente' : existingStatus);
-    await upsertClientFromInvoice(invoice.client);
-    await persistLineServices(invoice.lines);
-    await saveInvoice(invoice);
-    router.push(`/factures/${invoice.id}`);
+    setSaveError(null);
+    setSaving(true);
+    try {
+      const invoice = await buildInvoice(existingStatus === 'brouillon' ? 'en_attente' : existingStatus);
+      await upsertClientFromInvoice(invoice.client);
+      await persistLineServices(invoice.lines);
+      await saveInvoice(invoice);
+      router.push(`/factures/${invoice.id}`);
+    } catch (e) {
+      console.error('Save & preview failed:', e);
+      setSaveError(e instanceof Error ? e.message : 'Erreur inconnue lors de l\'enregistrement');
+      setSaving(false);
+    }
   }
 
   function applyService(lineId: string, serviceId: string) {
@@ -519,13 +537,20 @@ export default function InvoiceForm({ invoiceId }: InvoiceFormProps) {
         </section>
 
         {/* Actions */}
-        <div className="flex gap-3 justify-end pt-4 pb-12">
-          <Button variant="outline" onClick={handleSaveDraft} className="h-9 text-sm border-zinc-200">
-            Enregistrer en brouillon
-          </Button>
-          <Button onClick={handleSaveAndPreview} className="h-9 text-sm bg-zinc-900 hover:bg-zinc-800 text-white">
-            Enregistrer et pr&eacute;visualiser
-          </Button>
+        <div className="pt-4 pb-12 space-y-3">
+          {saveError && (
+            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {saveError}
+            </div>
+          )}
+          <div className="flex gap-3 justify-end">
+            <Button variant="outline" onClick={handleSaveDraft} disabled={saving} className="h-9 text-sm border-zinc-200">
+              {saving ? 'Enregistrement...' : 'Enregistrer en brouillon'}
+            </Button>
+            <Button onClick={handleSaveAndPreview} disabled={saving} className="h-9 text-sm bg-zinc-900 hover:bg-zinc-800 text-white">
+              {saving ? 'Enregistrement...' : 'Enregistrer et pr\u00e9visualiser'}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
