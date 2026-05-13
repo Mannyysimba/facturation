@@ -19,6 +19,12 @@ En cas de retard de paiement, seront exigibles, conformément au code de commerc
 Pas d'escompte en cas de paiement anticipé.
 Les modes de paiement accepté est uniquement le virement bancaire.`;
 
+export const DEFAULT_QUOTE_TERMS = `Ce devis est valable 30 jours à compter de sa date d'émission.
+TVA non applicable, art. 293 B du CGI.
+Le devis devient ferme et définitif à réception de l'exemplaire signé du client portant la mention « Bon pour accord ».
+Acompte éventuel à régler à la commande, solde à la livraison.
+Les modes de paiement accepté est uniquement le virement bancaire.`;
+
 export const VAT_RATES = [0, 5.5, 10, 20] as const;
 
 export const STATUS_LABELS: Record<string, string> = {
@@ -26,6 +32,18 @@ export const STATUS_LABELS: Record<string, string> = {
   en_attente: 'En attente',
   encaisse: 'Encaissé',
   en_retard: 'En retard',
+};
+
+// Labels for the same status enum when the document is a quote (devis).
+// We reuse the existing columns so the SQL schema stays untouched:
+//   en_attente => Envoyé (waiting for client response)
+//   encaisse   => Accepté
+//   en_retard  => Refusé
+export const QUOTE_STATUS_LABELS: Record<string, string> = {
+  brouillon: 'Brouillon',
+  en_attente: 'Envoyé',
+  encaisse: 'Accepté',
+  en_retard: 'Refusé',
 };
 
 export const STATUS_COLORS: Record<string, string> = {

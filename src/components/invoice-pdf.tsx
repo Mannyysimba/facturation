@@ -1,7 +1,7 @@
 'use client';
 
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
-import { Invoice } from '@/lib/types';
+import { Invoice, kindFromNumber } from '@/lib/types';
 import { COMPANY_INFO } from '@/lib/constants';
 import { lineTotal, totalHT, vatBreakdown, totalTTC } from '@/lib/calculations';
 
@@ -278,6 +278,8 @@ export default function InvoicePDF({ invoice }: { invoice: Invoice }) {
   const ht = totalHT(invoice.lines);
   const vatItems = vatBreakdown(invoice.lines);
   const ttc = totalTTC(invoice.lines);
+  const isQuote = kindFromNumber(invoice.number) === 'devis';
+  const docNoun = isQuote ? 'Devis' : 'Facture';
 
   return (
     <Document>
@@ -295,7 +297,7 @@ export default function InvoicePDF({ invoice }: { invoice: Invoice }) {
             </Text>
           </View>
           <View style={[styles.headerCol, { alignItems: 'flex-end' }]}>
-            <Text style={styles.clientLabel}>Facturé à</Text>
+            <Text style={styles.clientLabel}>{isQuote ? 'Destinataire' : 'Facturé à'}</Text>
             <Text style={[styles.clientName, { textAlign: 'right' }]}>{clientDisplayName(invoice)}</Text>
             {invoice.client.type === 'entreprise' && invoice.client.siret && (
               <Text style={[styles.headerText, { textAlign: 'right' }]}>SIRET : {invoice.client.siret}</Text>
@@ -306,10 +308,10 @@ export default function InvoicePDF({ invoice }: { invoice: Invoice }) {
 
         {/* Title */}
         <View style={styles.titleSection}>
-          <Text style={styles.invoiceTitle}>Facture {invoice.number}</Text>
+          <Text style={styles.invoiceTitle}>{docNoun} {invoice.number}</Text>
           <View style={styles.titleRow}>
             <Text style={styles.projectRef}>{invoice.title}</Text>
-            <Text style={styles.dateText}>Émise le {fmtDate(invoice.issueDate)}</Text>
+            <Text style={styles.dateText}>{isQuote ? 'Émis' : 'Émise'} le {fmtDate(invoice.issueDate)}</Text>
           </View>
         </View>
 
@@ -339,7 +341,7 @@ export default function InvoicePDF({ invoice }: { invoice: Invoice }) {
         {/* Due date + Totals */}
         <View style={styles.bottomSection}>
           <View style={styles.dueDateBox}>
-            <Text style={styles.dueDateLabel}>Échéance</Text>
+            <Text style={styles.dueDateLabel}>{isQuote ? 'Validité' : 'Échéance'}</Text>
             <Text style={styles.dueDateValue}>{fmtDate(invoice.dueDate)}</Text>
           </View>
           <View style={styles.totalsBox}>
@@ -382,10 +384,20 @@ export default function InvoicePDF({ invoice }: { invoice: Invoice }) {
             </Text>
           </View>
           <View style={[styles.footerCol, { alignItems: 'flex-end' }]}>
-            <Text style={[styles.footerLabel, { textAlign: 'right' }]}>Mode de paiement</Text>
-            <Text style={[styles.footerText, { textAlign: 'right' }]}>Virement bancaire</Text>
-            <Text style={[styles.footerMono, { textAlign: 'right' }]}>IBAN : {COMPANY_INFO.iban}</Text>
-            <Text style={[styles.footerMono, { textAlign: 'right' }]}>BIC : {COMPANY_INFO.bic}</Text>
+            {isQuote ? (
+              <>
+                <Text style={[styles.footerLabel, { textAlign: 'right' }]}>Conditions</Text>
+                <Text style={[styles.footerText, { textAlign: 'right' }]}>Bon pour accord à retourner signé</Text>
+                <Text style={[styles.footerText, { textAlign: 'right' }]}>Devis valable 30 jours</Text>
+              </>
+            ) : (
+              <>
+                <Text style={[styles.footerLabel, { textAlign: 'right' }]}>Mode de paiement</Text>
+                <Text style={[styles.footerText, { textAlign: 'right' }]}>Virement bancaire</Text>
+                <Text style={[styles.footerMono, { textAlign: 'right' }]}>IBAN : {COMPANY_INFO.iban}</Text>
+                <Text style={[styles.footerMono, { textAlign: 'right' }]}>BIC : {COMPANY_INFO.bic}</Text>
+              </>
+            )}
           </View>
         </View>
       </Page>

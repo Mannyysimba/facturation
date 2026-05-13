@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Invoice, LineItem, ClientType, SavedClient, Service } from '@/lib/types';
-import { DEFAULT_TERMS, VAT_RATES } from '@/lib/constants';
-import { generateInvoiceNumber, saveInvoice, getInvoice, getClients, upsertClientFromInvoice, deleteClient, getServices, upsertServiceFromLine } from '@/lib/store';
+import { Invoice, LineItem, ClientType, SavedClient, Service, DocumentKind, kindFromNumber } from '@/lib/types';
+import { DEFAULT_TERMS, DEFAULT_QUOTE_TERMS, VAT_RATES } from '@/lib/constants';
+import { generateInvoiceNumber, generateQuoteNumber, saveInvoice, getInvoice, getClients, upsertClientFromInvoice, deleteClient, getServices, upsertServiceFromLine } from '@/lib/store';
 import { lineTotal, totalHT, vatBreakdown, totalTTC, formatCurrency } from '@/lib/calculations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,9 +36,10 @@ function computeDueDate(issueDate: string, type: string): string {
 
 interface InvoiceFormProps {
   invoiceId?: string;
+  kind?: DocumentKind;
 }
 
-export default function InvoiceForm({ invoiceId }: InvoiceFormProps) {
+export default function InvoiceForm({ invoiceId, kind: kindProp = 'facture' }: InvoiceFormProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
@@ -57,7 +58,8 @@ export default function InvoiceForm({ invoiceId }: InvoiceFormProps) {
   const [dueDateType, setDueDateType] = useState<string>('30');
   const [customDueDate, setCustomDueDate] = useState('');
   const [lines, setLines] = useState<LineItem[]>([createLineItem()]);
-  const [terms, setTerms] = useState(DEFAULT_TERMS);
+  const [terms, setTerms] = useState(kindProp === 'devis' ? DEFAULT_QUOTE_TERMS : DEFAULT_TERMS);
+  const [kind, setKind] = useState<DocumentKind>(kindProp);
   const [existingStatus, setExistingStatus] = useState<Invoice['status']>('brouillon');
   const [existingId, setExistingId] = useState<string>('');
   const [savedClients, setSavedClients] = useState<SavedClient[]>([]);
@@ -76,6 +78,7 @@ export default function InvoiceForm({ invoiceId }: InvoiceFormProps) {
         const inv = await getInvoice(invoiceId);
         if (inv) {
           setNumber(inv.number);
+          setKind(kindFromNumber(inv.number));
           setTitle(inv.title);
           setClientType(inv.client.type);
           setCompanyName(inv.client.companyName || '');
@@ -95,7 +98,7 @@ export default function InvoiceForm({ invoiceId }: InvoiceFormProps) {
           setExistingId(inv.id);
         }
       } else {
-        setNumber(await generateInvoiceNumber());
+        setNumber(kindProp === 'devis' ? await generateQuoteNumber() : await generateInvoiceNumber());
       }
     })();
   }, [invoiceId]);
@@ -193,7 +196,7 @@ export default function InvoiceForm({ invoiceId }: InvoiceFormProps) {
       await upsertClientFromInvoice(invoice.client);
       await persistLineServices(invoice.lines);
       await saveInvoice(invoice);
-      router.push('/');
+      router.push(kindFromNumber(invoice.number) === 'devis' ? '/?tab=devis' : '/');
     } catch (e) {
       console.error('Save draft failed:', e);
       setSaveError(e instanceof Error ? e.message : 'Erreur inconnue lors de l\'enregistrement');
@@ -209,7 +212,8 @@ export default function InvoiceForm({ invoiceId }: InvoiceFormProps) {
       await upsertClientFromInvoice(invoice.client);
       await persistLineServices(invoice.lines);
       await saveInvoice(invoice);
-      router.push(`/factures/${invoice.id}`);
+      const docKind = kindFromNumber(invoice.number);
+      router.push(`/${docKind === 'devis' ? 'devis' : 'factures'}/${invoice.id}`);
     } catch (e) {
       console.error('Save & preview failed:', e);
       setSaveError(e instanceof Error ? e.message : 'Erreur inconnue lors de l\'enregistrement');
@@ -244,9 +248,11 @@ export default function InvoiceForm({ invoiceId }: InvoiceFormProps) {
       <div className="border-b border-zinc-200">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-zinc-900 tracking-tight">
-            {invoiceId ? 'Modifier la facture' : 'Nouvelle facture'}
+            {invoiceId
+              ? kind === 'devis' ? 'Modifier le devis' : 'Modifier la facture'
+              : kind === 'devis' ? 'Nouveau devis' : 'Nouvelle facture'}
           </h1>
-          <Button variant="outline" onClick={() => router.push('/')} className="h-8 text-sm border-zinc-200">
+          <Button variant="outline" onClick={() => router.push(kind === 'devis' ? '/?tab=devis' : '/')} className="h-8 text-sm border-zinc-200">
             Retour
           </Button>
         </div>
@@ -349,7 +355,7 @@ export default function InvoiceForm({ invoiceId }: InvoiceFormProps) {
 
         {/* Facture info */}
         <section className="space-y-4">
-          <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Facture</h2>
+          <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wide">{kind === 'devis' ? 'Devis' : 'Facture'}</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-sm text-zinc-600">Num&eacute;ro</Label>
@@ -364,23 +370,34 @@ export default function InvoiceForm({ invoiceId }: InvoiceFormProps) {
               <Input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} className="mt-1 h-9 bg-white border-zinc-200" />
             </div>
             <div>
-              <Label className="text-sm text-zinc-600">&Eacute;ch&eacute;ance</Label>
+              <Label className="text-sm text-zinc-600">{kind === 'devis' ? 'Validité' : 'Échéance'}</Label>
               <Select value={dueDateType} onValueChange={(v) => setDueDateType(v || '30')}>
                 <SelectTrigger className="mt-1 h-9 bg-white border-zinc-200">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="reception">&Agrave; r&eacute;ception</SelectItem>
-                  <SelectItem value="15">15 jours</SelectItem>
-                  <SelectItem value="30">30 jours</SelectItem>
-                  <SelectItem value="60">60 jours</SelectItem>
-                  <SelectItem value="custom">Date personnalis&eacute;e</SelectItem>
+                  {kind === 'devis' ? (
+                    <>
+                      <SelectItem value="15">15 jours</SelectItem>
+                      <SelectItem value="30">30 jours</SelectItem>
+                      <SelectItem value="60">60 jours</SelectItem>
+                      <SelectItem value="custom">Date personnalis&eacute;e</SelectItem>
+                    </>
+                  ) : (
+                    <>
+                      <SelectItem value="reception">&Agrave; r&eacute;ception</SelectItem>
+                      <SelectItem value="15">15 jours</SelectItem>
+                      <SelectItem value="30">30 jours</SelectItem>
+                      <SelectItem value="60">60 jours</SelectItem>
+                      <SelectItem value="custom">Date personnalis&eacute;e</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
             {dueDateType === 'custom' && (
               <div>
-                <Label className="text-sm text-zinc-600">Date d&apos;&eacute;ch&eacute;ance</Label>
+                <Label className="text-sm text-zinc-600">{kind === 'devis' ? 'Date limite de validité' : 'Date d’échéance'}</Label>
                 <Input type="date" value={customDueDate} onChange={(e) => setCustomDueDate(e.target.value)} className="mt-1 h-9 bg-white border-zinc-200" />
               </div>
             )}

@@ -165,11 +165,11 @@ export async function updateInvoiceStatus(id: string, status: Invoice['status'])
   await sql`UPDATE invoices SET status = ${status}, updated_at = NOW() WHERE id = ${id} AND user_id = ${userId}`;
 }
 
-export async function generateInvoiceNumber(): Promise<string> {
+async function generateNumberWithPrefix(rootPrefix: string): Promise<string> {
   const userId = await requireUserId();
   const now = new Date();
   const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const prefix = `FACT${yearMonth}-`;
+  const prefix = `${rootPrefix}${yearMonth}-`;
 
   const rows = (await sql`
     SELECT number FROM invoices
@@ -182,6 +182,14 @@ export async function generateInvoiceNumber(): Promise<string> {
 
   const next = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
   return `${prefix}${next}`;
+}
+
+export async function generateInvoiceNumber(): Promise<string> {
+  return generateNumberWithPrefix('FACT');
+}
+
+export async function generateQuoteNumber(): Promise<string> {
+  return generateNumberWithPrefix('DEV');
 }
 
 // ---------- Clients ----------

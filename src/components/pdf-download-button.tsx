@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Invoice } from '@/lib/types';
+import { Invoice, kindFromNumber } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 
 export default function PDFDownloadButton({ invoice }: { invoice: Invoice }) {
@@ -23,7 +23,8 @@ export default function PDFDownloadButton({ invoice }: { invoice: Invoice }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Facture-${invoice.number}.pdf`;
+      const prefix = kindFromNumber(invoice.number) === 'devis' ? 'Devis' : 'Facture';
+      a.download = `${prefix}-${invoice.number}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

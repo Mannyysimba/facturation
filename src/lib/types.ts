@@ -1,5 +1,14 @@
 export type InvoiceStatus = 'brouillon' | 'en_attente' | 'encaisse' | 'en_retard';
 
+export type DocumentKind = 'facture' | 'devis';
+
+export const INVOICE_PREFIX = 'FACT';
+export const QUOTE_PREFIX = 'DEV';
+
+export function kindFromNumber(number: string): DocumentKind {
+  return number.startsWith(QUOTE_PREFIX) ? 'devis' : 'facture';
+}
+
 export interface LineItem {
   id: string;
   label: string;

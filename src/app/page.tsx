@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Invoice, InvoiceStatus } from '@/lib/types';
-import { getInvoices, deleteInvoice, updateInvoiceStatus, saveInvoice, generateInvoiceNumber } from '@/lib/store';
+import { Invoice, InvoiceStatus, DocumentKind, kindFromNumber } from '@/lib/types';
+import { getInvoices, deleteInvoice, updateInvoiceStatus, saveInvoice, generateInvoiceNumber, generateQuoteNumber } from '@/lib/store';
 import { UserButton } from '@clerk/nextjs';
 import { Logo } from '@/components/logo';
 import { totalTTC, formatCurrency, formatDate } from '@/lib/calculations';
-import { STATUS_LABELS } from '@/lib/constants';
+import { STATUS_LABELS, QUOTE_STATUS_LABELS } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -50,8 +50,19 @@ const STATUS_DOT: Record<string, string> = {
   en_retard: 'bg-red-500',
 };
 
-export default function Dashboard() {
+export default function DashboardPage() {
+  return (
+    <Suspense>
+      <Dashboard />
+    </Suspense>
+  );
+}
+
+function Dashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialTab: DocumentKind = searchParams.get('tab') === 'devis' ? 'devis' : 'facture';
+  const [tab, setTab] = useState<DocumentKind>(initialTab);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -68,13 +79,18 @@ export default function Dashboard() {
     refresh();
   }, []);
 
+  const docsOfTab = useMemo(
+    () => invoices.filter((inv) => kindFromNumber(inv.number) === tab),
+    [invoices, tab]
+  );
+
   const years = useMemo(() => {
-    const set = new Set(invoices.map((inv) => new Date(inv.issueDate).getFullYear()));
+    const set = new Set(docsOfTab.map((inv) => new Date(inv.issueDate).getFullYear()));
     return Array.from(set).sort((a, b) => b - a);
-  }, [invoices]);
+  }, [docsOfTab]);
 
   const filtered = useMemo(() => {
-    return invoices.filter((inv) => {
+    return docsOfTab.filter((inv) => {
       if (statusFilter !== 'all' && inv.status !== statusFilter) return false;
       if (yearFilter !== 'all' && new Date(inv.issueDate).getFullYear() !== parseInt(yearFilter)) return false;
       if (search) {
@@ -88,21 +104,30 @@ export default function Dashboard() {
       }
       return true;
     }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [invoices, search, statusFilter, yearFilter]);
+  }, [docsOfTab, search, statusFilter, yearFilter]);
 
   const stats = useMemo(() => {
-    const total = invoices.reduce((s, inv) => s + totalTTC(inv.lines), 0);
-    const encaisse = invoices
+    const total = docsOfTab.reduce((s, inv) => s + totalTTC(inv.lines), 0);
+    const encaisse = docsOfTab
       .filter((inv) => inv.status === 'encaisse')
       .reduce((s, inv) => s + totalTTC(inv.lines), 0);
-    const enAttente = invoices
+    const enAttente = docsOfTab
       .filter((inv) => inv.status === 'en_attente')
       .reduce((s, inv) => s + totalTTC(inv.lines), 0);
-    const enRetard = invoices
+    const enRetard = docsOfTab
       .filter((inv) => inv.status === 'en_retard')
       .reduce((s, inv) => s + totalTTC(inv.lines), 0);
     return { total, encaisse, enAttente, enRetard };
-  }, [invoices]);
+  }, [docsOfTab]);
+
+  const facturesCount = useMemo(
+    () => invoices.filter((inv) => kindFromNumber(inv.number) === 'facture').length,
+    [invoices]
+  );
+  const devisCount = useMemo(
+    () => invoices.filter((inv) => kindFromNumber(inv.number) === 'devis').length,
+    [invoices]
+  );
 
   async function handleDelete() {
     if (deleteId) {
@@ -118,10 +143,12 @@ export default function Dashboard() {
   }
 
   async function handleDuplicate(inv: Invoice) {
+    const kind = kindFromNumber(inv.number);
+    const newNumber = kind === 'devis' ? await generateQuoteNumber() : await generateInvoiceNumber();
     const newInvoice: Invoice = {
       ...inv,
       id: crypto.randomUUID(),
-      number: await generateInvoiceNumber(),
+      number: newNumber,
       status: 'brouillon',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -131,7 +158,32 @@ export default function Dashboard() {
     await refresh();
   }
 
+  async function handleConvertToInvoice(inv: Invoice) {
+    const newInvoice: Invoice = {
+      ...inv,
+      id: crypto.randomUUID(),
+      number: await generateInvoiceNumber(),
+      status: 'brouillon',
+      issueDate: new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lines: inv.lines.map((l) => ({ ...l, id: crypto.randomUUID() })),
+    };
+    await saveInvoice(newInvoice);
+    await refresh();
+    router.push(`/factures/${newInvoice.id}/modifier`);
+  }
+
   if (!mounted) return null;
+
+  const isQuoteTab = tab === 'devis';
+  const labelMap = isQuoteTab ? QUOTE_STATUS_LABELS : STATUS_LABELS;
+  const newHref = isQuoteTab ? '/devis/nouvelle' : '/factures/nouvelle';
+  const newLabel = isQuoteTab ? 'Nouveau devis' : 'Nouvelle facture';
+  const detailHrefFor = (inv: Invoice) =>
+    kindFromNumber(inv.number) === 'devis' ? `/devis/${inv.id}` : `/factures/${inv.id}`;
+  const editHrefFor = (inv: Invoice) =>
+    kindFromNumber(inv.number) === 'devis' ? `/devis/${inv.id}/modifier` : `/factures/${inv.id}/modifier`;
 
   return (
     <div className="min-h-screen bg-white">
@@ -141,17 +193,42 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <Logo size={36} className="rounded-lg border border-zinc-200" />
             <div>
-              <h1 className="text-lg font-semibold text-zinc-900 tracking-tight">Factures</h1>
-              <p className="text-sm text-zinc-500 mt-0.5">{invoices.length} facture{invoices.length !== 1 ? 's' : ''}</p>
+              <h1 className="text-lg font-semibold text-zinc-900 tracking-tight">
+                {isQuoteTab ? 'Devis' : 'Factures'}
+              </h1>
+              <p className="text-sm text-zinc-500 mt-0.5">
+                {isQuoteTab
+                  ? `${devisCount} devis`
+                  : `${facturesCount} facture${facturesCount !== 1 ? 's' : ''}`}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/factures/nouvelle">
+            <Link href={newHref}>
               <Button className="bg-zinc-900 hover:bg-zinc-800 text-white text-sm h-9 px-4">
-                Nouvelle facture
+                {newLabel}
               </Button>
             </Link>
             <UserButton />
+          </div>
+        </div>
+        {/* Tabs */}
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="flex gap-6 -mb-px">
+            <button
+              onClick={() => { setTab('facture'); setStatusFilter('all'); setYearFilter('all'); }}
+              className={`pb-3 text-sm font-medium border-b-2 transition-colors ${tab === 'facture' ? 'border-zinc-900 text-zinc-900' : 'border-transparent text-zinc-500 hover:text-zinc-900'}`}
+            >
+              Factures
+              <span className="ml-2 text-xs text-zinc-400">{facturesCount}</span>
+            </button>
+            <button
+              onClick={() => { setTab('devis'); setStatusFilter('all'); setYearFilter('all'); }}
+              className={`pb-3 text-sm font-medium border-b-2 transition-colors ${tab === 'devis' ? 'border-zinc-900 text-zinc-900' : 'border-transparent text-zinc-500 hover:text-zinc-900'}`}
+            >
+              Devis
+              <span className="ml-2 text-xs text-zinc-400">{devisCount}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -160,19 +237,27 @@ export default function Dashboard() {
         {/* Stats row */}
         <div className="grid grid-cols-4 gap-px bg-zinc-200 rounded-lg overflow-hidden">
           <div className="bg-white p-4">
-            <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide">Total factur&eacute;</p>
+            <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide">
+              {isQuoteTab ? 'Total devisé' : 'Total facturé'}
+            </p>
             <p className="text-xl font-semibold text-zinc-900 mt-1">{formatCurrency(stats.total)}</p>
           </div>
           <div className="bg-white p-4">
-            <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide">Encaiss&eacute;</p>
+            <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide">
+              {isQuoteTab ? 'Accepté' : 'Encaissé'}
+            </p>
             <p className="text-xl font-semibold text-zinc-900 mt-1">{formatCurrency(stats.encaisse)}</p>
           </div>
           <div className="bg-white p-4">
-            <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide">En attente</p>
+            <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide">
+              {isQuoteTab ? 'Envoyé' : 'En attente'}
+            </p>
             <p className="text-xl font-semibold text-zinc-900 mt-1">{formatCurrency(stats.enAttente)}</p>
           </div>
           <div className="bg-white p-4">
-            <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide">En retard</p>
+            <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide">
+              {isQuoteTab ? 'Refusé' : 'En retard'}
+            </p>
             <p className="text-xl font-semibold text-zinc-900 mt-1">{formatCurrency(stats.enRetard)}</p>
           </div>
         </div>
@@ -191,10 +276,10 @@ export default function Dashboard() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tous</SelectItem>
-              <SelectItem value="brouillon">Brouillon</SelectItem>
-              <SelectItem value="en_attente">En attente</SelectItem>
-              <SelectItem value="encaisse">Encaiss&eacute;</SelectItem>
-              <SelectItem value="en_retard">En retard</SelectItem>
+              <SelectItem value="brouillon">{labelMap.brouillon}</SelectItem>
+              <SelectItem value="en_attente">{labelMap.en_attente}</SelectItem>
+              <SelectItem value="encaisse">{labelMap.encaisse}</SelectItem>
+              <SelectItem value="en_retard">{labelMap.en_retard}</SelectItem>
             </SelectContent>
           </Select>
           {years.length > 0 && (
@@ -215,10 +300,10 @@ export default function Dashboard() {
         {/* Table */}
         {filtered.length === 0 ? (
           <div className="border border-zinc-200 rounded-lg py-16 text-center">
-            <p className="text-zinc-400 text-sm">Aucune facture</p>
-            <Link href="/factures/nouvelle">
+            <p className="text-zinc-400 text-sm">{isQuoteTab ? 'Aucun devis' : 'Aucune facture'}</p>
+            <Link href={newHref}>
               <Button variant="outline" className="mt-4 text-sm h-9 border-zinc-200">
-                Cr&eacute;er une facture
+                {isQuoteTab ? 'Créer un devis' : 'Créer une facture'}
               </Button>
             </Link>
           </div>
@@ -230,7 +315,7 @@ export default function Dashboard() {
                   <TableHead className="text-xs font-medium text-zinc-500 uppercase tracking-wide">N&deg;</TableHead>
                   <TableHead className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Client</TableHead>
                   <TableHead className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Projet</TableHead>
-                  <TableHead className="text-xs font-medium text-zinc-500 uppercase tracking-wide">&Eacute;ch&eacute;ance</TableHead>
+                  <TableHead className="text-xs font-medium text-zinc-500 uppercase tracking-wide">{isQuoteTab ? 'Validité' : 'Échéance'}</TableHead>
                   <TableHead className="text-xs font-medium text-zinc-500 uppercase tracking-wide text-right">Montant</TableHead>
                   <TableHead className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Statut</TableHead>
                   <TableHead className="w-10"></TableHead>
@@ -241,7 +326,7 @@ export default function Dashboard() {
                   <TableRow
                     key={inv.id}
                     className="cursor-pointer hover:bg-zinc-50"
-                    onClick={() => router.push(`/factures/${inv.id}`)}
+                    onClick={() => router.push(detailHrefFor(inv))}
                   >
                     <TableCell className="text-sm">
                       <span className="font-medium text-zinc-900">{inv.number}</span>
@@ -256,7 +341,7 @@ export default function Dashboard() {
                     <TableCell>
                       <span className="inline-flex items-center gap-1.5 text-xs text-zinc-600">
                         <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[inv.status]}`} />
-                        {STATUS_LABELS[inv.status]}
+                        {labelMap[inv.status]}
                       </span>
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
@@ -271,24 +356,29 @@ export default function Dashboard() {
                           </svg>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => router.push(`/factures/${inv.id}`)}>
+                          <DropdownMenuItem onClick={() => router.push(detailHrefFor(inv))}>
                             Voir
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => router.push(`/factures/${inv.id}/modifier`)}>
+                          <DropdownMenuItem onClick={() => router.push(editHrefFor(inv))}>
                             Modifier
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleDuplicate(inv)}>
                             Dupliquer
                           </DropdownMenuItem>
+                          {isQuoteTab && (
+                            <DropdownMenuItem onClick={() => handleConvertToInvoice(inv)}>
+                              Convertir en facture
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => handleStatusChange(inv.id, 'en_attente')}>
-                            Marquer en attente
+                            {isQuoteTab ? 'Marquer envoyé' : 'Marquer en attente'}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleStatusChange(inv.id, 'encaisse')}>
-                            Marquer encaiss&eacute;
+                            {isQuoteTab ? 'Marquer accepté' : 'Marquer encaissé'}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleStatusChange(inv.id, 'en_retard')}>
-                            Marquer en retard
+                            {isQuoteTab ? 'Marquer refusé' : 'Marquer en retard'}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
@@ -312,7 +402,7 @@ export default function Dashboard() {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer cette facture ?</AlertDialogTitle>
+            <AlertDialogTitle>{isQuoteTab ? 'Supprimer ce devis ?' : 'Supprimer cette facture ?'}</AlertDialogTitle>
             <AlertDialogDescription>
               Cette action est irr&eacute;versible.
             </AlertDialogDescription>
